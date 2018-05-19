@@ -2,6 +2,7 @@ var lectures = ["GRNVS", "DWT", "Theo"];
 
 var outputString;
 
-for (var i in primeNumbers) {
-    outputString += lectures;
+for (var i in lectures) {
+    print(outputString);
+    outputString += lectures[i] + " ";
 }
