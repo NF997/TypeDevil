@@ -21,11 +21,9 @@
 \usepackage{amssymb}
 \setcounter{tocdepth}{3}
 \usepackage{graphicx}
-
+\usepackage{hyperref}
 \usepackage{url}
-\urldef{\mailsa}\path|{alfred.hofmann, ursula.barth, ingrid.haas, frank.holzwarth,|
-\urldef{\mailsb}\path|anna.kramer, leonie.kunz, christine.reiss, nicole.sator,|
-\urldef{\mailsc}\path|erika.siebert-cole, peter.strasser, lncs}@springer.com|    
+   
 \newcommand{\keywords}[1]{\par\addvspace\baselineskip
 \noindent\keywordname\enspace\ignorespaces#1}
 
@@ -34,38 +32,25 @@
 \mainmatter  % start of an individual contribution
 
 % first the title is needed
-\title{Lecture Notes in Computer Science:\\Authors' Instructions
-for the Preparation\\of Camera-Ready
-Contributions\\to LNCS/LNAI/LNBI Proceedings}
+\title{Seminar Report: TypeDevil}
 
 % a short form should be given in case it is too long for the running head
-\titlerunning{Lecture Notes in Computer Science: Authors' Instructions}
+\titlerunning{Seminar Report: TypeDevil}
 
 % the name(s) of the author(s) follow(s) next
+\author{Nico Fechtner}
 %
-% NB: Chinese authors should write their first names(s) in front of
-% their surnames. This ensures that the names appear correctly in
-% the running heads and the author index.
-%
-\author{Alfred Hofmann%
-\thanks{Please note that the LNCS Editorial assumes that all authors have used
-the western naming convention, with given names preceding surnames. This determines
-the structure of the names in the running heads and the author index.}%
-\and Ursula Barth\and Ingrid Haas\and Frank Holzwarth\and\\
-Anna Kramer\and Leonie Kunz\and Christine Rei\ss\and\\
-Nicole Sator\and Erika Siebert-Cole\and Peter Stra\ss er}
-%
-\authorrunning{Lecture Notes in Computer Science: Authors' Instructions}
+\authorrunning{Seminar Report: TypeDevil}
 % (feature abused for this document to repeat the title also on left hand pages)
 
 % the affiliations are given next; don't give your e-mail address
 % unless you accept that it will be published
-\institute{Springer-Verlag, Computer Science Editorial,\\
-Tiergartenstr. 17, 69121 Heidelberg, Germany\\
-\mailsa\\
-\mailsb\\
-\mailsc\\
-\url{http://www.springer.com/lncs}}
+\institute{Technical University of Munich\\
+Department of Informatics\\
+Chair for IT Security\\
+Boltzmannstraße 3, 85748 Garching, Germany\\
+\href{mailto:nico.fechtner@tum.de}{nico.fechtner@tum.de}
+}
 
 %
 % NB: a more complex sample for affiliations and the mapping to the
@@ -74,21 +59,25 @@ Tiergartenstr. 17, 69121 Heidelberg, Germany\\
 % "llncs.dem" accompanies the document class "llncs.cls".
 %
 
-\toctitle{Lecture Notes in Computer Science}
-\tocauthor{Authors' Instructions}
+% ???
+% \toctitle{Seminar Report: TypeDevil}
+% \tocauthor{Authors' Instructions}
 \maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+% \begin{abstract}
+% The abstract2 should summarize the contents of the paper and should
+% contain at least 70 and at most 150 words. It should be written using the
+% \emph{abstract} environment.
+% \keywords{We would like to encourage you to list your keywords within
+% the abstract section}
+% \end{abstract}
 
 
-\begin{abstract}
-The abstract2 should summarize the contents of the paper and should
-contain at least 70 and at most 150 words. It should be written using the
-\emph{abstract} environment.
-\keywords{We would like to encourage you to list your keywords within
-the abstract section}
-\end{abstract}
-
-
-\section{Introduction}
+\section{Context and Motivation}
 
 You are strongly encouraged to use \LaTeXe{} for the
 preparation of your camera-ready manuscript together with the
@@ -115,47 +104,9 @@ to both the printed book and the online version of the publication.
 Every detail, including the order of the names of the authors, should
 be checked before the paper is sent to the Volume Editors.
 
-\subsection{Checking the PDF File}
 
-Kindly assure that the Contact Volume Editor is given the name and email
-address of the contact author for your paper. The Contact Volume Editor
-uses these details to compile a list for our production department at
-SPS in India. Once the files have been worked upon, SPS sends a copy of
-the final pdf of each paper to its contact author. The contact author is
-asked to check through the final pdf to make sure that no errors have
-crept in during the transfer or preparation of the files. This should
-not be seen as an opportunity to update or copyedit the papers, which is
-not possible due to time constraints. Only errors introduced during the
-preparation of the files will be corrected.
 
-This round of checking takes place about two weeks after the files have
-been sent to the Editorial by the Contact Volume Editor, i.e., roughly
-seven weeks before the start of the conference for conference
-proceedings, or seven weeks before the volume leaves the printer's, for
-post-proceedings. If SPS does not receive a reply from a particular
-contact author, within the timeframe given, then it is presumed that the
-author has found no errors in the paper. The tight publication schedule
-of LNCS does not allow SPS to send reminders or search for alternative
-email addresses on the Internet.
-
-In some cases, it is the Contact Volume Editor that checks all the final
-pdfs. In such cases, the authors are not involved in the checking phase.
-
-\subsection{Additional Information Required by the Volume Editor}
-
-If you have more than one surname, please make sure that the Volume Editor
-knows how you are to be listed in the author index.
-
-\subsection{Copyright Forms}
-
-The copyright form may be downloaded from the ``For Authors"
-(Information for LNCS Authors) section of the LNCS Website:
-\texttt{www.springer.com/lncs}. Please send your signed copyright form
-to the Contact Volume Editor, either as a scanned pdf or by fax or by
-courier. One author may sign on behalf of all of the other authors of a
-particular paper. Digital signatures are acceptable.
-
-\section{Paper Preparation}
+\section{Overview and Example}
 
 Springer provides you with a complete integrated \LaTeX{} document class
 (\texttt{llncs.cls}) for multi-author books such as those in the LNCS
@@ -193,29 +144,9 @@ In general, please refrain from using the \verb+\special+ command.
 Remember to submit any further style files and
 fonts you have used together with your source files.
 
-\subsubsection{Headings.}
-
-Headings should be capitalized
-(i.e., nouns, verbs, and all other words
-except articles, prepositions, and conjunctions should be set with an
-initial capital) and should,
-with the exception of the title, be aligned to the left.
-Words joined by a hyphen are subject to a special rule. If the first
-word can stand alone, the second word should be capitalized.
-
-Here are some examples of headings: ``Criteria to Disprove
-Context-Freeness of Collage Language", ``On Correcting the Intrusion of
-Tracing Non-deterministic Programs by Software", ``A User-Friendly and
-Extendable Data Distribution System", ``Multi-flip Networks:
-Parallelizing GenSAT", ``Self-determinations of Man".
-
-\subsubsection{Lemmas, Propositions, and Theorems.}
-
 The numbers accorded to lemmas, propositions, and theorems, etc. should
 appear in consecutive order, starting with Lemma 1, and not, for
 example, with Lemma 11.
-
-\subsection{Figures}
 
 For \LaTeX\ users, we recommend using the \emph{graphics} or \emph{graphicx}
 package and the \verb+\includegraphics+ command.
@@ -233,7 +164,7 @@ your source.
 
 Please center the figures or your tabular material by using the \verb+\centering+
 declaration. Short captions are centered by default between the margins
-and typeset in 9-point type (Fig.~\ref{fig:example} shows an example).
+and typeset in 9-point type (Fig. shows an example).
 The distance between text and figure is preset to be about 8~mm, the
 distance between figure and caption about 6~mm.
 
@@ -243,16 +174,7 @@ pronounced as possible.
 
 If screenshots are necessary, please make sure that you are happy with
 the print quality before you send the files.
-\begin{figure}
-\centering
-\includegraphics[height=6.2cm]{eijkel2}
-\caption{One kernel at $x_s$ (\emph{dotted kernel}) or two kernels at
-$x_i$ and $x_j$ (\textit{left and right}) lead to the same summed estimate
-at $x_s$. This shows a figure consisting of different types of
-lines. Elements of the figure described in the caption should be set in
-italics, in parentheses, as shown in this sample caption.}
-\label{fig:example}
-\end{figure}
+
 
 Please define figures (and tables) as floating objects. Please avoid
 using optional location parameters like ``\verb+[h]+" for ``here".
@@ -268,7 +190,7 @@ printed in black and white, please make sure that they really are
 legible in black and white. Some colors as well as the contrast of
 converted colors show up very poorly when printed in black and white.
 
-\subsection{Formulas}
+
 
 Displayed equations or formulas are centered and set on a separate
 line (with an extra line or halfline space above and below). Displayed
@@ -284,7 +206,7 @@ which is the default if you use the \emph{equation} environment, e.g.,
 Equations should be punctuated in the same way as ordinary
 text but with a small space before the end punctuation mark.
 
-\subsection{Footnotes}
+
 
 The superscript numeral used to refer to a footnote appears in the text
 either directly after the word to be discussed or -- in relation to a
@@ -295,7 +217,7 @@ normal text area, with a line of about 2~cm set
 immediately above them.\footnote{The footnote numeral is set flush left
 and the text follows with the usual word spacing.}
 
-\subsection{Program Code}
+
 
 Program listings or program commands in the text are normally set in
 typewriter font, e.g., CMTT10 or Courier.
@@ -331,20 +253,28 @@ end.
 {\small (Example from Jensen K., Wirth N. (1991) Pascal user manual and
 report. Springer, New York)}
 
-\subsection{Citations}
+
 
 For citations in the text please use
 square brackets and consecutive numbers: \cite{jour}, \cite{lncschap},
 \cite{proceeding1} -- provided automatically
 by \LaTeX 's \verb|\cite| \dots\verb|\bibitem| mechanism.
 
-\subsection{Page Numbering and Running Heads}
+
 
 There is no need to include page numbers. If your paper title is too
 long to serve as a running head, it will be shortened. Your suggestion
 as to how to shorten it would be most welcome.
 
-\section{LNCS Online}
+\section{Approach}
+
+\subsection{Definitions}
+
+\subsection{Gathering Type Observations}
+
+\subsection{Building the Type Graph and Identifying Inconsistent Types}
+
+\subsection{Merging and Pruning of Warnings}
 
 The online version of the volume will be available in LNCS Online.
 Members of institutes subscribing to the Lecture Notes in Computer
@@ -357,7 +287,9 @@ to do so.
 Please note that, if your email address is given in your paper,
 it will also be included in the meta data of the online version.
 
-\section{BibTeX Entries}
+\section{Evaluation}
+
+\section{Related Research}
 
 The correct BibTeX entries for the Lecture Notes in Computer Science
 volumes can be found at the following Website shortly after the
@@ -367,7 +299,18 @@ publication of the book:
 \subsubsection*{Acknowledgments.} The heading should be treated as a
 subsubsection heading and should not be assigned a number.
 
-\section{The References Section}\label{references}
+\section{Static Type Checkers as an Alternative to Dynamic Analysis}
+
+\subsection{Approach of Static Type Checkers}
+
+\subsection{Comparison between TypeDevil and TypeScript}
+
+\subsubsection{Introduction to TypeScript}
+
+\subsubsection{Evaluation Set Up}
+
+\subsubsection{Results}
+
 
 In order to permit cross referencing within LNCS-Online, and eventually
 between different publishers and their online databases, LNCS will,
@@ -386,10 +329,6 @@ of the book you are referring to is in Russian or Chinese, then please write
 (in Russian) or (in Chinese) at the end of the transcript or translation
 of the title.
 
-The following section shows a sample reference list with entries for
-journal articles \cite{jour}, an LNCS chapter \cite{lncschap}, a book
-\cite{book}, proceedings without editors \cite{proceeding1} and
-\cite{proceeding2}, as well as a URL \cite{url}.
 Please note that proceedings published in LNCS are not cited with their
 full titles, but with their acronyms!
 
@@ -429,7 +368,7 @@ to \url{orders-HD-individuals@springer.com} to obtain a so-called token. This to
 number, which must be entered when placing an order via the Internet, in
 order to obtain the discount.
 
-\section{Checklist of Items to be Sent to Volume Editors}
+\section{Conclusion}
 Here is a checklist of everything the volume editor requires from you:
 
 
