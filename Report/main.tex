@@ -23,7 +23,43 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{url}
-   
+\usepackage{listings}
+\usepackage{color}
+\definecolor{lightgray}{rgb}{.9,.9,.9}
+\definecolor{darkgray}{rgb}{.4,.4,.4}
+\definecolor{purple}{rgb}{0.65, 0.12, 0.82}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstset{
+   language=JavaScript,
+   backgroundcolor=\color{lightgray},
+   extendedchars=true,
+   basicstyle=\footnotesize\ttfamily,
+   showstringspaces=false,
+   showspaces=false,
+   numbers=left,
+   numberstyle=\footnotesize,
+   numbersep=9pt,
+   tabsize=2,
+   breaklines=true,
+   showtabs=false,
+   captionpos=b
+}
+
 \newcommand{\keywords}[1]{\par\addvspace\baselineskip
 
 \noindent\keywordname\enspace\ignorespaces#1}
@@ -33,10 +69,10 @@
 \mainmatter  % start of an individual contribution
 
 % first the title is needed
-\title{Seminar Report\\-\\TypeDevil: Dynamic Type Inconsistency Analysis for JavaScript}
+\title{TypeDevil: Dynamic Type Inconsistency Analysis for JavaScript\\-\\Seminar Report}
 
 % a short form should be given in case it is too long for the running head
-\titlerunning{Seminar Report - TypeDevil}
+\titlerunning{TypeDevil - Seminar Report}
 
 % the name(s) of the author(s) follow(s) next
 \author{Nico Fechtner}
@@ -69,207 +105,56 @@ Boltzmannstraße 3, 85748 Garching, Germany\\
 \tableofcontents
 \newpage
 
-% \begin{abstract}
-% The abstract2 should summarize the contents of the paper and should
-% contain at least 70 and at most 150 words. It should be written using the
-% \emph{abstract} environment.
-% \keywords{We would like to encourage you to list your keywords within
-% the abstract section}
-% \end{abstract}
+\begin{abstract}
+JavaScript is dynamically and weakly typed which makes it possible to write type inconsistent code. 
+This can often lead to bugs. 
+TypeDevil addresses this issue with a mostly dynamic type inconsistency analysis which is able to warn developers about critical type related bugs.
+An alternative approach would be to use an additional static type system like e.g. TypeScript.
+\keywords{Dynamic Type Inconsistency Analysis for JavaScript, TypeDevil, Static Type Systems for JavaScript, TypeScript}
+\end{abstract}
 
 
-\section{Context and Motivation}
+\section{Introduction}
 
-You are strongly encouraged to use \LaTeXe{} for the
-preparation of your camera-ready manuscript together with the
-corresponding Springer class file \verb+llncs.cls+. Only if you use
-\LaTeXe{} can hyperlinks be generated in the online version
-of your manuscript.
+This report is part of the seminar "Common Security Flaws in JavaScript based Applications", which was organized by Paul Muntean from the Chair of IT Security at the Faculty of Informatics of the Technical University of Munich.
+The seminar took place in the summer semester 2018 and dealt with multiple scientific papers related to JavaScript Security. \\
+I personally took a deeper look at the paper "TypeDevil: Dynamic Type Inconsistency Analysis for JavaScript", published in 2014 by Michael Pradel, Parker Schuh and Koushik Sen.
+In this report I would like to explain the general problem the paper tries to address, introduce TypeDevil as a possible solution and compare TypeDevil to an alternative approach, namely additional static type systems. 
 
-The \LaTeX{} source of this instruction file for \LaTeX{} users may be
-used as a template. This is
-located in the ``authors'' subdirectory in
-\url{ftp://ftp.springer.de/pub/tex/latex/llncs/latex2e/instruct/} and
-entitled \texttt{typeinst.tex}. There is a separate package for Word 
-users. Kindly send the final and checked source
-and PDF files of your paper to the Contact Volume Editor. This is
-usually one of the organizers of the conference. You should make sure
-that the \LaTeX{} and the PDF files are identical and correct and that
-only one version of your paper is sent. It is not possible to update
-files at a later stage. Please note that we do not need the printed
-paper.
+\section{Inconsistent Types as the Root Cause of Many Bugs}
+First of all, I would like to introduce the general problem, TypeDevil wants to solve. \\
+JavaScript has two interesting characteristics we will focus on. 
+On the one hand, JavaScript is dynamically typed. This basically means, that we do not provide any static type annotations to our source code, like you would in statically typed languages, such as e.g. Java, and that types can change during runtime.
+On the other hand, JavaScript is also weakly typed and thereby very permissive. In order to prevent runtime exceptions, JavaScript performs a lot of automatic type conversions, also known as implicit coercions.
+Consider the code example. One could expect the output "Cat Dog Rabbit ".
+The actual output however is "undefinedCat Dog Rabbit ". In the first iteration of the for-loop, we try to concatenate a string to the value of outputString, which is undefined. 
+JavaScript now performs a implicit coercion and converts the value undefined to the string "undefined".
 
-We would like to draw your attention to the fact that it is not possible
-to modify a paper in any way, once it has been published. This applies
-to both the printed book and the online version of the publication.
-Every detail, including the order of the names of the authors, should
-be checked before the paper is sent to the Volume Editors.
+\lstset{language=javascript}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[frame=single, caption=Implicit Coercions]
+var pets = ["Cat", "Dog", "Rabbit"];
 
+var outputString;
 
+for (var i in pets) {
+    outputString += pets[i] + " ";
+}
 
-\section{Overview and Example}
+console.log(outputString);
+\end{lstlisting}
+\end{minipage}
 
-Springer provides you with a complete integrated \LaTeX{} document class
-(\texttt{llncs.cls}) for multi-author books such as those in the LNCS
-series. Papers not complying with the LNCS style will be reformatted.
-This can lead to an increase in the overall number of pages. We would
-therefore urge you not to squash your paper.
+As we saw, dynamic languages do not require programmers to annotate their programs with type information or to follow any strict typing discipline. 
+This freedom allows programmers to write concise code in short time. 
+However, most code does follow implicit type rules, e.g. only a single type per variable or object property or fixed function signatures.
+The authors of TypeDevil also state that many bugs are actually violations of these rules.
+So the freedom offered by dynamic languages often comes at the cost of hidden bugs. Since the language does not enforce any typing discipline, no compile-time warnings are reported if a program uses and combines types inconsistently.
+Although the code example seems trivial, when you consider critical applications like authentication or payment libraries, of course even a little type error could do some real damage.
 
-Please always cancel any superfluous definitions that are
-not actually used in your text. If you do not, these may conflict with
-the definitions of the macro package, causing changes in the structure
-of the text and leading to numerous mistakes in the proofs.
+\section{TypeDevils Approach}
 
-If you wonder what \LaTeX{} is and where it can be obtained, see the
-``\textit{LaTeX project site}'' (\url{http://www.latex-project.org})
-and especially the webpage ``\textit{How to get it}''
-(\url{http://www.latex-project.org/ftp.html}) respectively.
-
-When you use \LaTeX\ together with our document class file,
-\texttt{llncs.cls},
-your text is typeset automatically in Computer Modern Roman (CM) fonts.
-Please do
-\emph{not} change the preset fonts. If you have to use fonts other
-than the preset fonts, kindly submit these with your files.
-
-Please use the commands \verb+\label+ and \verb+\ref+ for
-cross-references and the commands \verb+\bibitem+ and \verb+\cite+ for
-references to the bibliography, to enable us to create hyperlinks at
-these places.
-
-For preparing your figures electronically and integrating them into
-your source file we recommend using the standard \LaTeX{} \verb+graphics+ or
-\verb+graphicx+ package. These provide the \verb+\includegraphics+ command.
-In general, please refrain from using the \verb+\special+ command.
-
-Remember to submit any further style files and
-fonts you have used together with your source files.
-
-The numbers accorded to lemmas, propositions, and theorems, etc. should
-appear in consecutive order, starting with Lemma 1, and not, for
-example, with Lemma 11.
-
-For \LaTeX\ users, we recommend using the \emph{graphics} or \emph{graphicx}
-package and the \verb+\includegraphics+ command.
-
-Please check that the lines in line drawings are not
-interrupted and are of a constant width. Grids and details within the
-figures must be clearly legible and may not be written one on top of
-the other. Line drawings should have a resolution of at least 800 dpi
-(preferably 1200 dpi). The lettering in figures should have a height of
-2~mm (10-point type). Figures should be numbered and should have a
-caption which should always be positioned \emph{under} the figures, in
-contrast to the caption belonging to a table, which should always appear
-\emph{above} the table; this is simply achieved as matter of sequence in
-your source.
-
-Please center the figures or your tabular material by using the \verb+\centering+
-declaration. Short captions are centered by default between the margins
-and typeset in 9-point type (Fig. shows an example).
-The distance between text and figure is preset to be about 8~mm, the
-distance between figure and caption about 6~mm.
-
-To ensure that the reproduction of your illustrations is of a reasonable
-quality, we advise against the use of shading. The contrast should be as
-pronounced as possible.
-
-If screenshots are necessary, please make sure that you are happy with
-the print quality before you send the files.
-
-
-Please define figures (and tables) as floating objects. Please avoid
-using optional location parameters like ``\verb+[h]+" for ``here".
-
-\paragraph{Remark 1.}
-
-In the printed volumes, illustrations are generally black and white
-(halftones), and only in exceptional cases, and if the author is
-prepared to cover the extra cost for color reproduction, are colored
-pictures accepted. Colored pictures are welcome in the electronic
-version free of charge. If you send colored figures that are to be
-printed in black and white, please make sure that they really are
-legible in black and white. Some colors as well as the contrast of
-converted colors show up very poorly when printed in black and white.
-
-
-
-Displayed equations or formulas are centered and set on a separate
-line (with an extra line or halfline space above and below). Displayed
-expressions should be numbered for reference. The numbers should be
-consecutive within each section or within the contribution,
-with numbers enclosed in parentheses and set on the right margin --
-which is the default if you use the \emph{equation} environment, e.g.,
-\begin{equation}
-  \psi (u) = \int_{o}^{T} \left[\frac{1}{2}
-  \left(\Lambda_{o}^{-1} u,u\right) + N^{\ast} (-u)\right] dt \;  .
-\end{equation}
-
-Equations should be punctuated in the same way as ordinary
-text but with a small space before the end punctuation mark.
-
-
-
-The superscript numeral used to refer to a footnote appears in the text
-either directly after the word to be discussed or -- in relation to a
-phrase or a sentence -- following the punctuation sign (comma,
-semicolon, or period). Footnotes should appear at the bottom of
-the
-normal text area, with a line of about 2~cm set
-immediately above them.\footnote{The footnote numeral is set flush left
-and the text follows with the usual word spacing.}
-
-
-
-Program listings or program commands in the text are normally set in
-typewriter font, e.g., CMTT10 or Courier.
-
-\medskip
-
-\noindent
-{\it Example of a Computer Program}
-\begin{verbatim}
-program Inflation (Output)
-  {Assuming annual inflation rates of 7%, 8%, and 10%,...
-   years};
-   const
-     MaxYears = 10;
-   var
-     Year: 0..MaxYears;
-     Factor1, Factor2, Factor3: Real;
-   begin
-     Year := 0;
-     Factor1 := 1.0; Factor2 := 1.0; Factor3 := 1.0;
-     WriteLn('Year  7% 8% 10%'); WriteLn;
-     repeat
-       Year := Year + 1;
-       Factor1 := Factor1 * 1.07;
-       Factor2 := Factor2 * 1.08;
-       Factor3 := Factor3 * 1.10;
-       WriteLn(Year:5,Factor1:7:3,Factor2:7:3,Factor3:7:3)
-     until Year = MaxYears
-end.
-\end{verbatim}
-%
-\noindent
-{\small (Example from Jensen K., Wirth N. (1991) Pascal user manual and
-report. Springer, New York)}
-
-
-
-For citations in the text please use
-square brackets and consecutive numbers: \cite{jour}, \cite{lncschap},
-\cite{proceeding1} -- provided automatically
-by \LaTeX 's \verb|\cite| \dots\verb|\bibitem| mechanism.
-
-
-
-There is no need to include page numbers. If your paper title is too
-long to serve as a running head, it will be shortened. Your suggestion
-as to how to shorten it would be most welcome.
-
-\section{Approach}
-
-\subsection{Definitions}
+\subsection{Overview}
 
 \subsection{Gathering Type Observations}
 
@@ -288,9 +173,9 @@ to do so.
 Please note that, if your email address is given in your paper,
 it will also be included in the meta data of the online version.
 
-\section{Evaluation}
-
 \section{Related Research}
+
+
 
 The correct BibTeX entries for the Lecture Notes in Computer Science
 volumes can be found at the following Website shortly after the
@@ -300,9 +185,11 @@ publication of the book:
 \subsubsection*{Acknowledgments.} The heading should be treated as a
 subsubsection heading and should not be assigned a number.
 
-\section{Static Type Checkers as an Alternative to Dynamic Analysis}
+\section{Static Type Systems as an Alternative to Dynamic Analysis}
 
-\subsection{General Approach of Static Type Checkers}
+\section{Evaluation}
+
+\subsection{Original Results for TypeDevil}
 
 \subsection{Comparison between TypeDevil and TypeScript}
 
@@ -311,6 +198,9 @@ subsubsection heading and should not be assigned a number.
 \subsubsection{Evaluation Setup}
 
 \subsubsection{Results}
+
+
+\subsection{Discussion}
 
 
 In order to permit cross referencing within LNCS-Online, and eventually
@@ -369,7 +259,7 @@ to \url{orders-HD-individuals@springer.com} to obtain a so-called token. This to
 number, which must be entered when placing an order via the Internet, in
 order to obtain the discount.
 
-\section{Conclusion}
+\section{Conclusion and Future Work}
 Here is a checklist of everything the volume editor requires from you:
 
 
