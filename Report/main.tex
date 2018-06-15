@@ -126,9 +126,10 @@ First of all, I would like to introduce the general problem, TypeDevil wants to 
 JavaScript has two interesting characteristics we will focus on. 
 On the one hand, JavaScript is dynamically typed. This basically means, that we do not provide any static type annotations to our source code, like you would in statically typed languages, such as e.g. Java, and that types can change during runtime.
 On the other hand, JavaScript is also weakly typed and thereby very permissive. In order to prevent runtime exceptions, JavaScript performs a lot of automatic type conversions, also known as implicit coercions.
-Consider the code example. One could expect the output "Cat Dog Rabbit ".
-The actual output however is "undefinedCat Dog Rabbit ". In the first iteration of the for-loop, we try to concatenate a string to the value of outputString, which is undefined. 
-JavaScript now performs a implicit coercion and converts the value undefined to the string "undefined".
+Consider listing 1.1. One could expect the output \lstinline[columns=fixed]{"Cat Dog Rabbit "}.
+The actual output however is \lstinline[columns=fixed]{"undefinedCat Dog Rabbit "}. 
+In the first iteration of the for-loop, we try to concatenate a string to the value of \lstinline[columns=fixed]{outputString}, which is undefined. 
+JavaScript now performs a implicit coercion and converts the value \lstinline[columns=fixed]{undefined} to the string \lstinline[columns=fixed]{"undefined"}.
 
 \lstset{language=javascript}
 \begin{minipage}{\linewidth}
@@ -150,50 +151,144 @@ This freedom allows programmers to write concise code in short time.
 However, most code does follow implicit type rules, e.g. only a single type per variable or object property or fixed function signatures.
 The authors of TypeDevil also state that many bugs are actually violations of these rules.
 So the freedom offered by dynamic languages often comes at the cost of hidden bugs. Since the language does not enforce any typing discipline, no compile-time warnings are reported if a program uses and combines types inconsistently.
-Although the code example seems trivial, when you consider critical applications like authentication or payment libraries, of course even a little type error could do some real damage.
+Although the code example does not seem that harmful, when you consider critical applications like authentication or payment libraries, of course even a little type error could do some real damage. \\
+TypeDevil wants to address this problem by gathering type observations during run-time, summarizing them into a type graph and finally reporting a set of agressivly filtered type inconsistency warnings.
+The challenges are on the one hand the absence of static type information and on the other hand the fact that a lot of JavaScript code is polymorphic on purpose.
+
+\section{Static and Dynamic Analyses} \label{staticDynamicAnalysis}
+
+For better understanding of the following I would like to clearify the difference between static and dynamic analyses first.\\
+The key difference is that within a static analysis you do not have any runtime information, since the analysis runs ahead of time and the only input to the analysis is the sourcecode itself.
+Therefore it is usually quite hard to predict the exact program behavior.
+It turns out, that it is even harder to get comprehensive and meaningful results for dynamic languages like JavaScript, because of constructs like the \lstinline[columns=fixed]{eval()} function, which interprets the string passed to it at runtime as normal JavaScript code. 
+However the good part about static analysis is that it usually covers all code paths and runs quite fast.
+Typical examples for static analyses in the context of JavaScript are linters, like ESLint, JSLint or Prettier, which can "detect common programming errors and ensure that certain best practices are followed". \\
+Dynamic analyses are typically characterized through the fact that they do have access to runtime information.
+Often instrumentation code gets added to the original source code to keep track of certain characteristics of the program the analysis cares about.
+After that, this instrumented version of the source code gets executed, the analysis gathers runtime information, e.g. user input, and the results of the analysis get computed.
+With this approach you can catch certain errors, static analysis wouldn't be able to find.
+For example, consider again the \lstinline[columns=fixed]{eval()} function.
+With a dynamic analysis you can actually track the code which gets interpreted on the fly.
+However, the biggest downside of a purely dynamic analysis is, that it naturally doesn't cover all code paths.
+TypeDevil, as we will see in the following, uses a mostly dynamic approach to gather type observations at runtime.
 
 \section{TypeDevils Approach}
 
-\subsection{Overview}
+This section will introduce you to the mechanisms TypeDevil uses to effectively identify and report inconsistent types.
+In general, there are three main steps, TypeDevil performs: 
+First, instrumentation code gets inserted to the original source code to gather type observations at nearly any point in the program execution.
+Out of this - for non trivial really huge - set of type observations, TypeDevil builds a TypeGraph, which makes it possible to relatively easily merge type which are structurally equivalent.
+On the basis of this condensed type graph, TypeDevil identifies inconsistent types and applies a set of merging and pruning techniques to aggressively reduce the number of reported warnings.
+
+\subsection{Running Example}
+Consider listing 1.2, which shows the running example I will use to introduce you to the various steps of TypeDevils pipeline.
+Note that this is also the example, the authors of TypeDevil used throughout their paper.
+As you can see, there is a simple function \lstinline[columns=fixed]{addWrapped} which takes two arguments and returns the addition of the \lstinline[columns=fixed]{v} properties of both arguments if you pass two parameters and returns just the \lstinline[columns=fixed]{v} property of the first argument if only one is passed at the function call.
+Then there is a simple constructor function \lstinline[columns=fixed]{Wrapper} which just creates an object with only one property \lstinline[columns=fixed]{v}.
+And lastly \lstinline[columns=fixed]{addWrapped} gets called three times with different parameters.
+Of course it sticks out that the \lstinline[columns=fixed]{v} property of the object we pass to \lstinline[columns=fixed]{addWrapped} when calling it the third time is a string and not a number.
+This seems to be a type inconsistency and as we will see, TypeDevil will effectively warn us about this.
+
+\lstset{language=javascript}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[frame=single, caption=Running Example]
+function addWrapped(x, y) {
+    if (y) {
+        return x.v + y.v;
+    } else {
+        return x.v;
+    }
+}
+
+function Wrapper(v) {
+    this.v = v;
+}
+
+addWrapped({v:23});
+addWrapped({v:20}, new Wrapper(3));
+addWrapped({v:"18"}, new Wrapper(5));
+\end{lstlisting}
+\end{minipage}
+
 
 \subsection{Gathering Type Observations}
+
+The first step of TypeDevils pipeline is to gather type observations at runtime.
+To achieve this, TypeDevil instruments the original source code in two ways.
+On the one hand, it adds a shadow value to each object and function, containing a unique identifier, which makes it easy to access the objects of functions type name whenever they are referred to. 
+On the other hand, TypeDevil gathers type observations at every relevant code location.
+A type in the sense of TypeDevil is either a primitive type (boolean, number, string, undefined, null) or a so called record type, which basically maps a named property to a set of types.
+For record types, TypeDevil differentiates between object types, array types, function types and (function) frame types.
+A type observation is basically a triple consisting of a basetype, a property and an observed type.
+In the following, we will look at each instrumentation, TypeDevil adds to the original source of our running example.
+
+\subsubsection{Object Literals}
+Consider \lstinline[columns=fixed]{addWrapped} gets called for the first time.
+With the use of the object literal \lstinline[columns=fixed]{(v:23)} we create a new object to pass it to the function.
+First, we append a shadow value holding a unique identifier to the newly created object. A possible unique identifier could just be the string \lstinline[columns=fixed]{"object"} concatenated with a unique number, e.g. \lstinline[columns=fixed]{"object1"}.
+After that, we add a type observation for each property of the object.
+In our example we would add the type observation \lstinline[columns=fixed]{(object1, v, number)}, since \lstinline[columns=fixed]{"object1"} is the basetype, \lstinline[columns=fixed]{v} is the name of the property and \lstinline[columns=fixed]{23} is a numeric value.
+
+\subsubsection{Property Access}
+TypeDevil also gathers type observations on each property access.
+In our example, when we call \lstinline[columns=fixed]{addWrapped} for the first time, we do not provide a second argument, so we will definitely end up in the else branch on line 5. 
+There we access the property \lstinline[columns=fixed]{v} of the object we passed to the function.
+So we add the type observation \lstinline[columns=fixed]{(object1, v, number)}.
+As you can see, this is exactly the same type observation we already stored at the creation of the object which, for sure, seems quite redundant. 
+Nevertheless we have to add a type observation for each property access, since code which we do not instrument like third party libraries or code which we just cannot instrument, namely native code, could potentially change the types of properties.
+
+\subsubsection{Function Literals}
+Just as with objects, TypeDevil also appends shadow values containing unique identifiers to all function literals.
+In our example, it would append the unique identifier \lstinline[columns=fixed]{"function addWrapped"}, to the function starting at line 1.
+
+\subsubsection{Function Calls}
+For each function call, TypeDevil adds two type observations.
+The first one refers to the receiver of the function and the second one refers to the return type.
+Consider again the first call of \lstinline[columns=fixed]{addWrapped}.
+TypeDevil adds the type observation \lstinline[columns=fixed]{(function addWrapped, this, window)}, since \lstinline[columns=fixed]{addWrapped} gets called without an explicit receiver in which case the global object - e.g. \lstinline[columns=fixed]{window} - becomes the receiver
+and \lstinline[columns=fixed]{(function addWrapped, return, number)}, since the function returns a numeric value (\lstinline[columns=fixed]{23}).
+
+\subsubsection{Variable Access}
+We already saw how TypeDevil gathers type observations for each property access.
+The same thing happens on every local variable access.
+It is important to note, that similar to the internal implementation of JavaScript itself, TypeDevil treats function arguments as local variables.
+Like in the previous examples, consider the first call of \lstinline[columns=fixed]{addWrapped}.
+TypeDevil adds the type observation \lstinline[columns=fixed]{(frame addWrapped, y, undefined)} when we access the value of \lstinline[columns=fixed]{y} which happens to be \lstinline[columns=fixed]{undefined}.
+
+\subsection{Executing the Program}
+After instrumenting the original source code, TypeDevil executes the program and dynamically gathers type observation for each construct I mentioned above.
+The authors of TypeDevil implemented two versions of the analysis. You can either run it on top of node or you can use a custom version of Firefox where they modified Spidermonkey, the JavaScript engine of Firefox, to instrument the JavaScript programs before they get executed.
+So after the execution we basically have a huge set of type observations we can process further.
 
 \subsection{Building the Type Graph and Identifying Inconsistent Types}
 
 \subsection{Merging and Pruning of Warnings}
 
-The online version of the volume will be available in LNCS Online.
-Members of institutes subscribing to the Lecture Notes in Computer
-Science series have access to all the pdfs of all the online
-publications. Non-subscribers can only read as far as the abstracts. If
-they try to go beyond this point, they are automatically asked, whether
-they would like to order the pdf, and are given instructions as to how
-to do so.
-
-Please note that, if your email address is given in your paper,
-it will also be included in the meta data of the online version.
 
 \section{Related Research}
 
+First of all, there is a lot of related research on static type analysis.
+While the first publications in this field restricted JavaScript to a subset which was suitable for static analysis, [x] showed that it is also possible to perform an effective static type inconsistency analysis while allowing the whole JavaScript language.
+Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.
+In the field of dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach, according to [x]. 
+[x] also implemented a combined type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
+Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the field of additional type checkers.
+A lot of the research in this area is driven by influential companies like Google, Facebook and Microsoft.
+We will take a closer look at additional static type systems in the following section.
 
-
-The correct BibTeX entries for the Lecture Notes in Computer Science
-volumes can be found at the following Website shortly after the
-publication of the book:
-\url{http://www.informatik.uni-trier.de/~ley/db/journals/lncs.html}
-
-\subsubsection*{Acknowledgments.} The heading should be treated as a
-subsubsection heading and should not be assigned a number.
 
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
+
+\subsection{Approach of Additional Static Type Systems}
+
+\subsection{Introduction to TypeScript}
+
 
 \section{Evaluation}
 
 \subsection{Original Results for TypeDevil}
 
-\subsection{Comparison between TypeDevil and TypeScript}
-
-\subsubsection{Introduction to TypeScript}
+\subsection{Comparing TypeDevil and TypeScript}
 
 \subsubsection{Evaluation Setup}
 
