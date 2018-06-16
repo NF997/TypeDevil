@@ -46,7 +46,6 @@
 
 \lstset{
    language=JavaScript,
-   backgroundcolor=\color{lightgray},
    extendedchars=true,
    basicstyle=\footnotesize\ttfamily,
    showstringspaces=false,
@@ -224,7 +223,7 @@ In the following, we will look at each instrumentation, TypeDevil adds to the or
 
 \subsubsection{Object Literals}
 Consider \lstinline[columns=fixed]{addWrapped} gets called for the first time.
-With the use of the object literal \lstinline[columns=fixed]{(v:23)} we create a new object to pass it to the function.
+With the use of the object literal \lstinline[columns=fixed]!{v:23}! we create a new object to pass it to the function.
 First, we append a shadow value holding a unique identifier to the newly created object. A possible unique identifier could just be the string \lstinline[columns=fixed]{"object"} concatenated with a unique number, e.g. \lstinline[columns=fixed]{"object1"}.
 After that, we add a type observation for each property of the object.
 In our example we would add the type observation \lstinline[columns=fixed]{(object1, v, number)}, since \lstinline[columns=fixed]{"object1"} is the basetype, \lstinline[columns=fixed]{v} is the name of the property and \lstinline[columns=fixed]{23} is a numeric value.
@@ -310,6 +309,7 @@ Without any modification of the source code, you would get the following warning
 \lstinline[columns=fixed]{Operator '+=' cannot be applied to types 'number' and 'number | boolean'}.
 So TypeScript notes, that the property \lstinline[columns=fixed]{a} of the objects which the program iterates over is sometimes a numeric and sometimes a boolean value and prevents you from writing type inconsistent code like this.
 
+\medskip\medskip
 \lstset{language=javascript}
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[frame=single, caption=inconsistent\_foreach.js]
