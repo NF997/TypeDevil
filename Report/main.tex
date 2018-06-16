@@ -106,11 +106,11 @@ Boltzmannstraße 3, 85748 Garching, Germany\\
 \newpage
 
 \begin{abstract}
-JavaScript is dynamically and weakly typed which makes it possible to write type inconsistent code. 
-This can often lead to bugs. 
-TypeDevil addresses this issue with a mostly dynamic type inconsistency analysis which is able to warn developers about critical type related bugs.
-An alternative approach would be to use an additional static type system like e.g. TypeScript.
-\keywords{Dynamic Type Inconsistency Analysis for JavaScript, TypeDevil, Static Type Systems for JavaScript, TypeScript}
+JavaScript is dynamically and weakly typed which makes it possible to write type inconsistent and therefore buggy code. 
+TypeDevil addresses this issue with a mostly dynamic type inconsistency analysis which is able to effectively warn developers about critical type related bugs.
+An alternative solution would be to use an additional static type system like e.g. TypeScript.
+My evaluation shows that both approaches perform quite similar in finding type inconsistencies (?).
+%\keywords{Dynamic Type Inconsistency Analysis for JavaScript, TypeDevil, Static Type Systems for JavaScript, TypeScript}
 \end{abstract}
 
 
@@ -273,22 +273,66 @@ Of course also for type analyses the typical advantages and disadvantages of sta
 In the field of dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach, according to [x]. 
 [x] also implemented a combined type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
 Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the field of additional type checkers.
-A lot of the research in this area is driven by influential companies like Google, Facebook and Microsoft.
-We will take a closer look at additional static type systems in the following section.
-
+We will take a closer look at this approach in the following section.
 
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
-\subsection{Approach of Additional Static Type Systems}
+Additional static type systems for JavaScript got a lot of attention over the last years, since major tech companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
+They basically try to solve the same problem like TypeDevil, so they want to provide you with warnings when you are writing type inconsistent code, but instead of TypeDevil you already get these warnings ahead of time.
+Note that static type systems for dynamic languages also have a lot of additional advantages.
+For example they enable a mature development experience with rich auto completion and advanced refactoring options.
+However, in the following we will just focus on type warnings.
+
+\subsection{Approach of Additional Static Type Systems} \label{staticTypeSystems}
+
+There are a lot of different additional static type systems - also known as static type checkers - for JavaScript.
+The three most used ones are TypeScript (Microsoft), Flow (Facebook) and the Google Closure Compiler.
+Basically they all work quite similar.
+Most of them are a super set of JavaScript, which simply means that every valid JavaScript program is already also for example a TypeScript or a Flow program.
+This makes the gradual adoption of an additional type system really easy.
+The approach is to extend the core JavaScript language with additional type annotations, be it in the form of inline types (TypeScript, Flow) or in the form of special comments (Google Closure).
+Another characteristic of these static type checkers is their mature type inference, which means that you do not have to provide special type annotations at any point in your program per se.
+Instead, the tools try to infer most of the types for you. 
+For example, when you declare and initialize a variable to a numeric value, the inferred type for that variable would be \lstinline[columns=fixed]{number}.
+If you afterwards try to assign e.g. a string value to this variable, you would get a compiler warning without having to explicitly declare that this variable should only hold numeric values.
+
 
 \subsection{Introduction to TypeScript}
+
+To give you the necessary background for the following comparison in \ref{comparison}, I would like to introduce you to TypeScript.
+I choose TypeScript as an example for a static type checker, since it is by far the most used one.
+Furthermore, [x] showed, that in terms of type inconsistencies, TypeScript and Flow report nearly the exact same warnings.
+As stated in [x], TypeScript is a syntactic superset of JavaScript.
+It provides additional syntax for declaring and expressing types, for annotating properties, variables, parameters and return values with types, and for asserting the type of an expression.
+However, as explained in \ref{staticTypeSystems}, TypeScript also supports rich type inference.
+For example, consider the example shown in Listing [x]. 
+Without any modification of the source code, you would get the following warning, when compiling this script with the TypeScript compiler:
+\lstinline[columns=fixed]{Operator '+=' cannot be applied to types 'number' and 'number | boolean'}.
+So TypeScript notes, that the property \lstinline[columns=fixed]{a} of the objects which the program iterates over is sometimes a numeric and sometimes a boolean value and prevents you from writing type inconsistent code like this.
+
+\lstset{language=javascript}
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[frame=single, caption=inconsistent\_foreach.js]
+(function() {
+    
+    var a = [{a: 23}, {a: 42}, {a: false}];
+    var sum = 0;
+    a.forEach(function(x) {
+        sum += x.a;
+    });
+    
+})();
+\end{lstlisting}
+\end{minipage}
+
+
 
 
 \section{Evaluation}
 
 \subsection{Original Results for TypeDevil}
 
-\subsection{Comparing TypeDevil and TypeScript}
+\subsection{Comparing TypeDevil and TypeScript} \label{comparison}
 
 \subsubsection{Evaluation Setup}
 
