@@ -18,6 +18,8 @@
 
 \documentclass[runningheads,a4paper]{llncs}
 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage{amssymb}
 \setcounter{tocdepth}{3}
 \usepackage{graphicx}
@@ -278,29 +280,28 @@ We will take a closer look at this approach in the following section.
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
 Additional static type systems for JavaScript got a lot of attention over the last years, since major tech companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
-They basically try to solve the same problem like TypeDevil, so they want to provide you with warnings when you are writing type inconsistent code, but instead of TypeDevil you already get these warnings ahead of time.
+They basically try to solve the same problem as TypeDevil.
+They want to provide developers with warnings for type inconsistent code, but in contrast to dynamic analyses like TypeDevil you already get these warnings ahead of time.
 Note that static type systems for dynamic languages also have a lot of additional advantages.
-For example they enable a mature development experience with rich auto completion and advanced refactoring options.
+For example they enable a mature development experience with rich auto completion, advanced refactoring options and always up-to-date code documentation.
 However, in the following we will just focus on type warnings.
 
 \subsection{Approach of Additional Static Type Systems} \label{staticTypeSystems}
-
 There are a lot of different additional static type systems - also known as static type checkers - for JavaScript.
 The three most used ones are TypeScript (Microsoft), Flow (Facebook) and the Google Closure Compiler.
 Basically they all work quite similar.
-Most of them are a super set of JavaScript, which simply means that every valid JavaScript program is already also for example a TypeScript or a Flow program.
+Most of them are a super set of JavaScript, which simply means that every valid JavaScript program is also already for example a TypeScript or a Flow program.
 This makes the gradual adoption of an additional type system really easy.
-The approach is to extend the core JavaScript language with additional type annotations, be it in the form of inline types (TypeScript, Flow) or in the form of special comments (Google Closure).
-Another characteristic of these static type checkers is their mature type inference, which means that you do not have to provide special type annotations at any point in your program per se.
+The basic approach is to extend the core JavaScript language with additional type annotations, either in the form of inline types (TypeScript, Flow) or in the form of special comments (Google Closure).
+Another characteristic of static type checkers is their mature type inference, which means that you do not have to provide special type annotations at any point in your program per se.
 Instead, the tools try to infer most of the types for you. 
 For example, when you declare and initialize a variable to a numeric value, the inferred type for that variable would be \lstinline[columns=fixed]{number}.
 If you afterwards try to assign e.g. a string value to this variable, you would get a compiler warning without having to explicitly declare that this variable should only hold numeric values.
 
 
 \subsection{Introduction to TypeScript}
-
-To give you the necessary background for the following comparison in \ref{comparison}, I would like to introduce you to TypeScript.
-I choose TypeScript as an example for a static type checker, since it is by far the most used one.
+To give you the necessary background for the upcoming comparison in \ref{comparison}, I would like to introduce you to TypeScript.
+I choose TypeScript as an example for a static type checker, since it is by far the most used one according to \cite{StateOfJs}.
 Furthermore, \cite{DBLP:conf/icse/GaoBB17} showed, that in terms of type inconsistencies, TypeScript and Flow report nearly the exact same warnings.
 As stated in \cite{DBLP:conf/ecoop/BiermanAT14}, TypeScript is a syntactic superset of JavaScript, which provides additional syntax for declaring and expressing types, for annotating properties, variables, parameters and return values with types, and for asserting the type of an expression.
 However, as explained in \ref{staticTypeSystems}, TypeScript also supports rich type inference.
@@ -324,7 +325,6 @@ So TypeScript notes, that the property \lstinline[columns=fixed]{a} of the objec
 })();
 \end{lstlisting}
 \end{minipage}
-
 
 
 
