@@ -139,8 +139,7 @@ One could expect the script to print \lstinline[columns=fixed]{"Cat Dog Rabbit "
 The actual output however is \lstinline[columns=fixed]{"undefinedCat Dog Rabbit "}. 
 In the first iteration of the for-loop, we try to concatenate a string to the value of \lstinline[columns=fixed]{outputString}, which is undefined. 
 JavaScript now performs a implicit coercion and converts the value \lstinline[columns=fixed]{undefined} to the string \lstinline[columns=fixed]{"undefined"} which leads to the unexpected output.
-
-\medskip\medskip
+\\ \\
 \lstset{language=javascript}
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[frame=single, caption=Implicit Coercions, label={listingPets}] 
@@ -198,8 +197,7 @@ Then there is a simple constructor function \lstinline[columns=fixed]{Wrapper} w
 And lastly \lstinline[columns=fixed]{addWrapped} gets called three times with different parameters.
 Of course it sticks out that the \lstinline[columns=fixed]{v} property of the object we pass to \lstinline[columns=fixed]{addWrapped} when calling it the third time is a string and not a number.
 This seems to be a type inconsistency and as we will see, TypeDevil will effectively warn us about this problem.
-
-\medskip\medskip
+\\ \\
 \lstset{language=javascript}
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[frame=single, caption=Running Example, label=listingRunningExample]
@@ -273,86 +271,52 @@ You can either run it on top of node or you can use a custom version of Firefox 
 After the instrumented execution TypeDevil holds a huge set of type observations for further processing.
 
 \subsection{Building the Type Graph and Identifying Inconsistent Types}
-\label{TGs}
 
-Iterating over each type observation, TypeDevil can now produce a type graph sticking to the following heuristic.
-In the first step, every type becomes a node in the graph.
-If a type is a record type, there will be an outgoing edge for each property labeled with the name of the property.
-There is only one node for each occurring primitive type.
-Figure \ref{fig:UncondensedTG} shows the uncondensed type graph for the running example.\\
-Subsequently, TypeDevil reduces the graph, so that there are no two nodes which are structurally equivalent, which means there are no nodes left which have outgoing edges equally labled and pointing to the same type.
-Figure \ref{fig:CondensedTG} shows the condensed type graph for the running example.
-For example, you can spot that \lstinline[columns=fixed]{object1}, \lstinline[columns=fixed]{object2}, \lstinline[columns=fixed]{object3} and \lstinline[columns=fixed]{object5} got merged together, since they are structurally equivalent.
-Condensing the type graph is really important, because the redundancy of the initial graph can really slow down the following operations on the graph. \\
-TypeDevil can now identify inconsistent types. 
-The intuition is again really simple: 
-Whenever a type has got two or more outgoing edges, labled equally, but pointing to different types, there is a type inconsistency.
-In our example, the local variables \lstinline[columns=fixed]{x} and \lstinline[columns=fixed]{y} are obviously of inconsistent types.
-
-\begin{figure}[h]
+\begin{figure}
+    \centering
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=.4\linewidth]{image1}
+      \caption{A subfigure}
+      \label{fig:sub1}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=.4\linewidth]{image1}
+      \caption{A subfigure}
+      \label{fig:sub2}
+    \end{subfigure}
+    \caption{A figure with two subfigures}
+    \label{fig:test}
+    \end{figure}
 \includegraphics[width=\textwidth]{UncondensedTG}
 \caption{Uncondensed Type Graph}
-\label{fig:UncondensedTG}
 \end{figure}
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{CondensedTG}
 \caption{Condensed Type Graph}
-\label{fig:CondensedTG}
 \end{figure}
 
 
 \subsection{Merging and Pruning of Warnings}
 
-A naive implementation of the approach explained in \ref{TGs} reports various false positives, since a variable, property, or function may refer to multiple types on purpose. 
-TypeDevil combines two kinds of techniques to distinguish such intended polymorphic code from inconsistency problems. 
-First of all, the authors of TypeDevil developed techniques which try to put warnings which seem to have the same root cause in the same equivalence class.
-Ensuing, TypeDevil marks warnings which are likely to be likely false positives for pruning.
-TypeDevil then only keeps one warning per equivalence class if none of the warnings in this class are marked for pruning.\\
-There are a lot of different merging and pruning heuristics which \cite{DBLP:conf/icse/PradelSS15} explains in detail.
-Nevertheless, I want to introduce you to the only pruning technique which utilizes a static analysis which takes place before the main dynamic analysis of TypeDevil, namely pruning by belief analysis.\\
-Consider listing \ref{lst:BeliefAnalysis}, which was also used in \cite{DBLP:conf/icse/PradelSS15}.
-
-\medskip\medskip
-\lstset{language=javascript}
-\begin{minipage}{\linewidth}
-\begin{lstlisting}[frame=single, caption=Pruning via Belief Analysis, label={lst:BeliefAnalysis}]
-function BigInteger(a, b, c) { 
-    this.array = new Array();
-    if (a != null) // belief: a may be undefined or null
-        if ('number' == typeof a) // belief: a may be number
-            this.fromNumber(a, b, c);
-        else if (b == null && // belief: b may be undefined or null
-            'string' != typeof a) // belief: a may be string
-            this.fromString(a, 256); 
-        else  
-            this.fromString(a, b);
-}
-\end{lstlisting}
-\end{minipage}
-
-As you can see, this script uses runtime type checks to distinguish the types that the first two parameters of \lstinline[columns=fixed]{BigInteger} may have.
-This is a really common idiom in real world JavaScript code.
-A naive implementation of TypeDevil would report type inconsistencies e.g. when \lstinline[columns=fixed]{BigInteger} gets called one time with the first parameter being \lstinline[columns=fixed]{null} and the second time with the first parameter being numeric, even though the program is correct. 
-TypeDevil performs a static analysis to extract the programmer’s "intent".
-Common idioms used to check the runtime type of a variable get recognized and the according "belief" gets stored as an string expression at the beginning of the according function.
-The main analysis then uses this information to prune warnings which are false positives.
-E.g. for \lstinline[columns=fixed]{BigInteger}, TypeDevil would not report a warning if \lstinline[columns=fixed]{a} is sometimes \lstinline[columns=fixed]{null} and sometimes a \lstinline[columns=fixed]{number}.
 
 \section{Related Research}
 
 First of all, there is a lot of related research on static type analysis.
 While the first publications in this field restricted JavaScript to a subset which was suitable for static analysis, \cite{DBLP:conf/sas/JensenMT09} showed that it is also possible to perform an effective static type inconsistency analysis while allowing the whole JavaScript language.
-Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.\\
-According to \cite{DBLP:conf/icse/TanXCLYS17}, when it comes to dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach. 
+Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.
+In the field of dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach, according to \cite{DBLP:conf/icse/TanXCLYS17}. 
 \cite{DBLP:conf/icse/TanXCLYS17} also implemented a combined type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
 Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the field of additional type checkers.
-Th following section will give deeper insights into this approach.
+We will take a closer look at this approach in the following section.
 
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
-Additional static type systems for JavaScript got a lot of attention over the last years, since major IT companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
-Trying to solve basically the same problem as TypeDevil, they want to provide developers with warnings for type inconsistent code, but in contrast to dynamic analyses like TypeDevil you already get these warnings ahead of time.
+Additional static type systems for JavaScript got a lot of attention over the last years, since major tech companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
+They basically try to solve the same problem as TypeDevil.
+They want to provide developers with warnings for type inconsistent code, but in contrast to dynamic analyses like TypeDevil you already get these warnings ahead of time.
 Note that static type systems for dynamic languages also have a lot of additional advantages.
 For example they enable a mature development experience with rich auto completion, advanced refactoring options and always up-to-date code documentation.
 However, in the following we will just focus on type warnings.
@@ -386,11 +350,13 @@ So TypeScript notes, that the property \lstinline[columns=fixed]{a} of the objec
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[frame=single, caption=inconsistent\_foreach.js, label=listingForEach]
 (function() {
+    
     var a = [{a: 23}, {a: 42}, {a: false}];
     var sum = 0;
     a.forEach(function(x) {
         sum += x.a;
     });
+    
 })();
 \end{lstlisting}
 \end{minipage}
