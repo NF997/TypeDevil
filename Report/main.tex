@@ -114,7 +114,7 @@ Boltzmannstraße 3, 85748 Garching, Germany\\
 \begin{abstract}
 JavaScripts dynamic and weak type system which makes it possible to write type inconsistent and therefore buggy code. 
 TypeDevil addresses this issue with a mostly dynamic type inconsistency analysis which is able to effectively warn developers about critical type related bugs.
-An alternative solution heavily used in real world projects are additional static type system like e.g. TypeScript.
+An alternative solution heavily used in the industry are additional static type system like e.g. TypeScript.
 A comparing evaluation shows that both approaches perform quite similar in finding type inconsistencies with TypeScript being just slightly better.
 %\keywords{Dynamic Type Inconsistency Analysis for JavaScript, TypeDevil, Static Type Systems for JavaScript, TypeScript}
 \end{abstract}
@@ -283,9 +283,9 @@ Figure \ref{fig:UncondensedTG} shows the uncondensed type graph for the running 
 Subsequently, TypeDevil reduces the graph, so that there are no two nodes which are structurally equivalent, which means there are no nodes left which have outgoing edges equally labled and pointing to the same type.
 Figure \ref{fig:CondensedTG} shows the condensed type graph for the running example.
 For example, you can spot that \lstinline[columns=fixed]{object1}, \lstinline[columns=fixed]{object2}, \lstinline[columns=fixed]{object3} and \lstinline[columns=fixed]{object5} got merged together, since they are structurally equivalent.
-Condensing the type graph is really important, because the redundancy of the initial graph can really slow down the following operations on the graph. \\
+Condensing the type graph is extremely important, because the redundancy of the initial graph can really slow down the following operations on the graph. \\
 TypeDevil can now identify inconsistent types. 
-The intuition is again really simple: 
+The intuition is again quite simple: 
 Whenever a type has got two or more outgoing edges, labled equally, but pointing to different types, there is a type inconsistency.
 In our example, the local variables \lstinline[columns=fixed]{x} and \lstinline[columns=fixed]{y} are obviously of inconsistent types.
 
@@ -332,7 +332,7 @@ function BigInteger(a, b, c) {
 \end{minipage}
 
 As you can see, this script uses runtime type checks to distinguish the types that the first two parameters of \lstinline[columns=fixed]{BigInteger} may have.
-This is a really common idiom in real world JavaScript code.
+This is a really common idiom in industry level JavaScript code.
 A naive implementation of TypeDevil would report type inconsistencies e.g. when \lstinline[columns=fixed]{BigInteger} gets called one time with the first parameter being \lstinline[columns=fixed]{null} and the second time with the first parameter being numeric, even though the program is correct. 
 TypeDevil performs a static analysis to extract the programmer’s "intent".
 Common idioms used to check the runtime type of a variable get recognized and the according "belief" gets stored as an string expression at the beginning of the according function.
@@ -346,32 +346,34 @@ While the first publications in this field restricted JavaScript to a subset whi
 Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.\\
 According to \cite{DBLP:conf/icse/TanXCLYS17}, when it comes to dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach. 
 \cite{DBLP:conf/icse/TanXCLYS17} also implemented a combined type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
-Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the field of additional type checkers.
-Th following section will give deeper insights into this approach.
+Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the one of additional static type systems - also known as static type checkers.
+The following section will give deeper insights into this approach.
 
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
 Additional static type systems for JavaScript got a lot of attention over the last years, since major IT companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
 Trying to solve basically the same problem as TypeDevil, they want to provide developers with warnings for type inconsistent code, but in contrast to dynamic analyses like TypeDevil you already get these warnings ahead of time.
-Note that static type systems for dynamic languages also have a lot of additional advantages.
+Important to note is that static type systems for dynamic languages also have a lot of additional advantages.
 For example they enable a mature development experience with rich auto completion, advanced refactoring options and always up-to-date code documentation.
 However, in the following we will just focus on type warnings.
 
 \subsection{Approach of Additional Static Type Systems} \label{staticTypeSystems}
-There are a lot of different additional static type systems - also known as static type checkers - for JavaScript.
+There are a lot of different additional static type systems for JavaScript.
 The three most used ones are TypeScript (Microsoft), Flow (Facebook) and the Google Closure Compiler.
-Basically they all work quite similar.
-Most of them are a super set of JavaScript, which simply means that every valid JavaScript program is also already for example a TypeScript or a Flow program.
+Basically all of them behave and work quite similar.
+Usually, they are a superset of JavaScript, which means that every JavaScript program is also already for example a syntactically valid TypeScript or a Flow program.
 This makes the gradual adoption of an additional type system really easy.
 The basic approach is to extend the core JavaScript language with additional type annotations, either in the form of inline types (TypeScript, Flow) or in the form of special comments (Google Closure).
-Another characteristic of static type checkers is their mature type inference, which means that you do not have to provide special type annotations at any point in your program per se.
-Instead, the tools try to infer most of the types for you. 
-For example, when you declare and initialize a variable to a numeric value, the inferred type for that variable would be \lstinline[columns=fixed]{number}.
-If you afterwards try to assign e.g. a string value to this variable, you would get a compiler warning without having to explicitly declare that this variable should only hold numeric values.
+Another characteristic of state of the art static type checkers is their mature type inference, which means that developers do not have to provide special type annotations at any point in their program per se.
+Instead, the tools try to infer most of the types for them. 
+For example, when declaring and initializing a variable to a numeric value, the inferred type for that variable would be \lstinline[columns=fixed]{number}.
+If there is code which afterwards tries to assign e.g. a \lstinline[columns=fixed]{string} value to this variable, there would be a compiler error without having to explicitly declare that this variable should only hold numeric values.
+Last but not least, keep in mind that these tools are only designed for the development process.
+They all compile the annotated code back to plain JavaScript which runs in all common JavaScript engines and does not have any runtime type checks.
 
 
 \subsection{Introduction to TypeScript}
-To give you the necessary background for the upcoming comparison in \ref{comparison}, I would like to introduce you to TypeScript.
+To provide to necessary background for the upcoming comparison in \ref{comparison}, I would like to introduce TypeScript.
 I choose TypeScript as an example for a static type checker, since it is by far the most used one according to \cite{StateOfJs}.
 Furthermore, \cite{DBLP:conf/icse/GaoBB17} showed, that in terms of type inconsistencies, TypeScript and Flow report nearly the exact same warnings.
 As stated in \cite{DBLP:conf/ecoop/BiermanAT14}, TypeScript is a syntactic superset of JavaScript, which provides additional syntax for declaring and expressing types, for annotating properties, variables, parameters and return values with types, and for asserting the type of an expression.
