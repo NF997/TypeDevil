@@ -128,8 +128,8 @@ A comparative evaluation shows that both approaches perform quite similar in ide
 
 This report is part of the seminar "Common Security Flaws in JavaScript based Applications" \cite{CommonSecFlaws}, which was held by Paul Muntean from the Chair of IT Security at the Faculty of Informatics of the Technical University of Munich.
 The seminar took place in the summer semester 2018 and dealt with several scientific papers related to JavaScript Security. \\
-I personally took a deeper look at the paper "TypeDevil: Dynamic Type Inconsistency Analysis for JavaScript" \cite{DBLP:conf/icse/PradelSS15}, published in 2015 by Michael Pradel, Parker Schuh and Koushik Sen.
-In this report I would like to explain the general problem the paper tries to address, introduce TypeDevil as a possible solution and compare it to an alternative approach, namely additional static type systems. 
+The paper I took a deeper look at is "TypeDevil: Dynamic Type Inconsistency Analysis for JavaScript" \cite{DBLP:conf/icse/PradelSS15}, published in 2015 by Michael Pradel, Parker Schuh and Koushik Sen.
+This report illustrates the general problem the paper tries to address, introduces TypeDevil as a possible solution and compares it to an alternative approach, namely additional static type systems. 
 
 \section{Inconsistent Types as the Root Cause of Many Bugs}
 First of all, let me introduce the general problem that TypeDevil tries to solve. \\
@@ -172,7 +172,7 @@ The challenges are on the one hand the absence of static type information and on
 
 \section{Static and Dynamic Analyses} \label{staticDynamicAnalysis}
 
-For better understanding of the following I would like to clarify the difference between static and dynamic analyses first.\\
+For better understanding of the following the difference between static and dynamic analyses should be clarified first.\\
 The key differentiation point is that within a static analysis you do not have any runtime information, since the analysis runs ahead of time and the only input to the analysis is the source code itself.
 Therefore it is usually quite hard to predict the exact program behavior.
 It turns out, that it is even harder to get comprehensive and precise results for dynamic languages like JavaScript, because of constructs like the \lstinline[columns=fixed]{eval()} function, which interprets the string passed to it at runtime as normal JavaScript code. 
@@ -197,7 +197,7 @@ Out of this potentially huge set of type observations, TypeDevil constructs a ty
 On the basis of the condensed type graph, TypeDevil identifies inconsistent types and applies a set of merging and pruning techniques to drastically reduce the number of reported warnings.
 
 \subsection{Running Example}
-Consider listing \ref{listingRunningExample}, which shows the running example I will use to introduce you to the various steps of TypeDevils pipeline.
+Consider listing \ref{listingRunningExample}, which shows the running example used to introduce the various steps of TypeDevils pipeline.
 Note that this is also the example, the authors of TypeDevil used throughout their paper.
 As you can see, there is a simple function \lstinline[columns=fixed]{addWrapped} which takes two arguments and returns the addition of the \lstinline[columns=fixed]{v} properties of both arguments if you pass two parameters and returns just the \lstinline[columns=fixed]{v} property of the first argument if only one is passed at the function call.
 Then there is a simple constructor function \lstinline[columns=fixed]{Wrapper} which just creates an object with only one property \lstinline[columns=fixed]{v}.
@@ -315,7 +315,7 @@ First of all, the authors of TypeDevil developed techniques which try to put war
 Ensuing, TypeDevil marks warnings which are likely to be likely false positives for pruning.
 TypeDevil then only keeps one warning per equivalence class if none of the warnings in this class are marked for pruning.\\
 There are a lot of different merging and pruning heuristics which \cite{DBLP:conf/icse/PradelSS15} explains in detail.
-Nevertheless, I want to introduce you to the only pruning technique which utilizes a static analysis which takes place before the main dynamic analysis of TypeDevil, namely pruning by belief analysis.\\
+Nevertheless, the only pruning technique which utilizes a static analysis which takes place before the main dynamic analysis of TypeDevil should be described in the following: Pruning by belief analysis.\\
 Consider listing \ref{lst:BeliefAnalysis}, which was also used in \cite{DBLP:conf/icse/PradelSS15}.
 
 \medskip\medskip
@@ -343,17 +343,6 @@ TypeDevil performs a static analysis to extract the programmer’s "intent".
 Common idioms used to check the runtime type of a variable get recognized and the according "belief" gets stored as an string expression at the beginning of the according function.
 The main analysis then uses this information to prune warnings which are false positives.
 E.g. for \lstinline[columns=fixed]{BigInteger}, TypeDevil would not report a warning if \lstinline[columns=fixed]{a} is sometimes \lstinline[columns=fixed]{null} and sometimes a \lstinline[columns=fixed]{number}.
-
-\section{Related Research}
-
-First of all, there is a lot of related research on static type analysis.
-While the first publications in this field restricted JavaScript to a subset which was suitable for static analysis, \cite{DBLP:conf/sas/JensenMT09} showed that it is also possible to perform an effective static type inconsistency analysis while allowing the whole JavaScript language.
-Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.\\
-According to \cite{DBLP:conf/icse/TanXCLYS17}, when it comes to dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach. 
-\cite{DBLP:conf/icse/TanXCLYS17} also implemented a combined type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
-Furthermore, there is a lot of work on other dynamic analyses for JavaScript, often also on top of Jalangi \cite{DBLP:phd/basesearch/Austin13}, \cite{DBLP:conf/issta/GongPSS15}, \cite{DBLP:conf/sigsoft/GongPS15}, \cite{DBLP:conf/sigsoft/JensenSSC15}.
-Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the one of additional static type systems - also known as static type checkers.
-The following section will further explain this approach.
 
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
@@ -423,7 +412,7 @@ To type entire objects, TypeScript offers classes and interfaces which can also 
 \end{minipage}
 
 Last but not least, I want to mention a project called DefinitelyTyped \cite{DefinitelyTyped}, in which about 6,500 developers all around the world collaborate to provide type interfaces for nearly 3,600 third-party libraries at the time of writing.
-This makes it possible to get a strongly typed interface for every major library just by installing the according type definitions via npm.
+These so called declaration files make it possible to interact type safe with every major third party library just by installing the according type definitions via npm.
 
 \section{Evaluation}
 
@@ -546,6 +535,20 @@ The only scenario I can imagine, where it could be worth it to give TypeDevil a 
 But of course with big applications you also have to consider the 26X to 30X overhead of Jalangi, on which TypeDevil relies, while a static type checker has just a very little overhead ahead of time.
 
 \newpage
+
+\section{Related Research}
+
+First of all, there is a lot of related research on static type analysis.
+While the first publications in this field restricted JavaScript to a subset which was suitable for static analysis, \cite{DBLP:conf/sas/JensenMT09} showed that it is also possible to perform an effective static type inconsistency analysis while allowing the whole JavaScript language.
+Of course also for type analyses the typical advantages and disadvantages of static analysis explained in \ref{staticDynamicAnalysis} hold true.\\
+According to \cite{DBLP:conf/icse/TanXCLYS17}, when it comes to dynamic type analysis for JavaScript, TypeDevil is still the state of the art approach. 
+\cite{DBLP:conf/icse/TanXCLYS17} also implemented a integrated type analysis which first analyzes programs statically and afterwards refines the results with a subsequent dynamic analysis which implements the basic ideas of TypeDevil.
+Furthermore, there is a lot of work on other dynamic analyses for JavaScript, often also on top of Jalangi \cite{DBLP:phd/basesearch/Austin13}, \cite{DBLP:conf/issta/GongPSS15}, \cite{DBLP:conf/sigsoft/GongPS15}, \cite{DBLP:conf/sigsoft/JensenSSC15}.
+Another research area which tries to solve the general problem of type inconsistencies for dynamic languages is the one of additional static type systems - also known as static type checkers.
+A topic got a lot of attention by the research community recently is the verification of TypeScript declaration files \cite{DBLP:conf/fase/KristensenM17}, \cite{DBLP:conf/ecoop/WilliamsMWZ17}, \cite{DBLP:journals/pacmpl/KristensenM17}.
+Furthermore, \cite{DBLP:conf/ecoop/BiermanAT14} introduced a precise mathematical formalization of the core constructs of TypeScripts type system, while refactoring the language into a set of safe core constructs and a set of additional rather unsafe constructs.
+
+
 \section{Conclusion and Future Work}
 With this report, I introduced the general problem of JavaScripts dynamic and weak type system enabling type related bugs.
 I further summarized the key aspects of \cite{DBLP:conf/icse/PradelSS15}, which proposed TypeDevil as a possible solution for the problem.
