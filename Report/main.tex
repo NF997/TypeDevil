@@ -61,7 +61,8 @@
    tabsize=2,
    breaklines=true,
    showtabs=false,
-   captionpos=b
+   captionpos=b,
+    xrightmargin=8.4pt
 }
 
 \renewcommand{\lstlistlistingname}{List of Listing}
@@ -122,8 +123,8 @@ Boltzmannstraße 3, 85748 Garching, Germany\\
 \setcounter{tocdepth}{2}
 \tableofcontents
 \newpage
-\lstlistoflistings % The list of listings
-\newpage
+% \lstlistoflistings % The list of listings
+% \newpage
 
 \section{Introduction}
 
@@ -185,7 +186,7 @@ The following section will focus on TypeDevils mostly dynamic approach to gather
 
 \section{TypeDevils Approach}
 
-This section will introduce the core mechanisms TypeDevil uses to effectively identify and report inconsistent types.
+This section will introduce the core mechanisms TypeDevil uses to effectively identify and report inconsistent types and is primarily based on \cite{DBLP:conf/icse/PradelSS15}.
 There is a prototype of TypeDevil implemented by the authors on top of Jalangi \cite{DBLP:conf/sigsoft/SenKBG13a} which can be found on GitHub \cite{TypeDevilGitHub}.\\
 In general, there are three main phases, TypeDevil goes through: 
 First, instrumentation code gets added to the original source code to gather type observations at every relevant code location.
@@ -267,14 +268,14 @@ Analogical to property accesses, TypeDevil deals with local variable accesses.
 It is important to note, that similar to the internal implementation of JavaScript itself, TypeDevil treats function arguments as local variables.
 Like in the previous examples, consider \lstinline[columns=fixed]{addWrapped} getting called for the first time.
 TypeDevil adds the type observation \lstinline[columns=fixed]{(frame addWrapped, y, undefined)} when the value of \lstinline[columns=fixed]{y} gets accessed, which happens to be \lstinline[columns=fixed]{undefined}.
-
-\subsection{Building the Type Graph and Identifying Inconsistent Types}
-\label{TGs}
 \begin{figure}[h]
     \fbox{\includegraphics[width=\textwidth]{UncondensedTG}}
     \caption{Uncondensed Type Graph}
     \label{fig:UncondensedTG}
     \end{figure}
+
+\subsection{Building the Type Graph and Identifying Inconsistent Types}
+\label{TGs}
 Having gathered a big set of type observations, TypeDevil - while iterating over each observation - is able to produce a type graph using the following heuristic.
 In the first step, every type becomes a node in the graph.
 If a type is a record type, for each property an outgoing edge is added, labeled with the name of the property and directing to the type of this property. 
@@ -284,16 +285,15 @@ Subsequently, TypeDevil condenses the graph, so that there are no two nodes whic
 Figure \ref{fig:CondensedTG} shows the condensed type graph for the running example.
 E.g. \lstinline[columns=fixed]{object1}, \lstinline[columns=fixed]{object2}, \lstinline[columns=fixed]{object3} and \lstinline[columns=fixed]{object5} were merged together, since they are structurally equivalent.
 Condensing the type graph is extremely important, because the redundancy of the initial graph can really slow down the following operations on the graph.
+TypeDevil can now identify inconsistent types. 
+The intuition is again quite simple: 
+Whenever a type has got two or more outgoing edges labeled equally, but pointing to different types, there is a type inconsistency.
+In the running example, the local variables \lstinline[columns=fixed]{x} and \lstinline[columns=fixed]{y} are obviously of inconsistent types.
 \begin{figure}[h]
     \fbox{\includegraphics[width=\textwidth]{CondensedTG}}
     \caption{Condensed Type Graph}
     \label{fig:CondensedTG}
 \end{figure}
-TypeDevil can now identify inconsistent types. 
-The intuition is again quite simple: 
-Whenever a type has got two or more outgoing edges labeled equally, but pointing to different types, there is a type inconsistency.
-In the running example, the local variables \lstinline[columns=fixed]{x} and \lstinline[columns=fixed]{y} are obviously of inconsistent types.
-
 
 \newpage
 \subsection{Merging and Pruning of Warnings}
@@ -323,11 +323,11 @@ Consider listing \ref{lst:BeliefAnalysis} which was also used by the authors of 
 \begin{lstlisting}[frame=single, caption=Pruning via Belief Analysis, label={lst:BeliefAnalysis}]
 function BigInteger(a, b, c) { 
     this.array = new Array();
-    if (a != null) // belief: a may be undefined or null
-        if ("number" == typeof a) // belief: a may be number
+    if (a != null) //belief: a may be undefined or null
+        if ("number" == typeof a) //belief: a may be number
             this.fromNumber(a, b, c);
-        else if (b == null && // belief: b may be undefined or null
-            "string" != typeof a) // belief: a may be string
+        else if (b == null && //belief: b may be undefined or null
+            "string" != typeof a) //belief: a may be string
             this.fromString(a, 256); 
         else  
             this.fromString(a, b);
@@ -345,8 +345,8 @@ E.g. for \lstinline[columns=fixed]{BigInteger}, TypeDevil would not report a war
 \section{Static Type Systems as an Alternative to Dynamic Analysis}
 
 Additional static type systems for JavaScript got a lot of attention over the last years, since major IT companies like Google, Facebook or Microsoft are developing them and provide production ready tools for developers.
-Trying to solve basically the same problem as TypeDevil, they want to provide developers with warnings for type inconsistent code, but in contrast to dynamic analyses like TypeDevil producing these already ahead of time.
-Important to note is that static type systems for dynamic languages also have a lot of additional advantages.
+Trying to solve basically the same problem as TypeDevil, they also emit warnings for type inconsistent code, but in contrast to dynamic analyses they produce these already ahead of time.
+Important to keep in mind is that static type systems for dynamic languages also have a lot of additional advantages.
 For example they enable a mature development experience with rich auto completion, advanced refactoring options and always up-to-date code documentation.
 However, in the following the focus will be on type warnings.
 
@@ -361,21 +361,13 @@ Another common characteristic, state of the art static type checkers share, is t
 Instead, the tools try to infer most of the types for them. 
 For example, when declaring and initializing a variable to a numeric value, the inferred type for that variable would be \lstinline[columns=fixed]{number}.
 If there is code which afterwards tries to assign e.g. a \lstinline[columns=fixed]{string} value to this variable, there would be a compiler error without having to explicitly declare that this variable should only hold numeric values.
-Last but not least, keep in mind that these tools are only designed for the development process.
+Additionally, it is important that these tools are only designed for the development process.
 Usually, they all compile the annotated code back to plain JavaScript which runs in all common JavaScript engines and does not have any runtime type checks.
 
 
 \subsection{Introduction to TypeScript} \label{IntroToTS}
 To provide the necessary background for the upcoming comparison in \ref{comparison}, this subsection will introduce TypeScript, which was chosen as an example for a static type checker, since it is by far the most used one according to \cite{StateOfJs}.
 Furthermore, \cite{DBLP:conf/icse/GaoBB17} showed, that in terms of type inconsistencies, TypeScript and Flow report nearly the exact same warnings which is why Flow is not part of the upcoming evaluation.\\
-Microsoft first released TypeScript in 2012 as an open-source programming language to support the development of large enterprise JavaScript applications. 
-After installing it via npm, a package manager for JavaScript libraries, the TypeScript compiler can be used to check either plain .js files (with the compiler option  \lstinline[columns=fixed]{--allowJs}), or annotated .ts files.
-As stated in \cite{DBLP:conf/ecoop/BiermanAT14}, TypeScript is a syntactic superset of JavaScript, which provides additional syntax for declaring and expressing types, for annotating properties, variables, parameters and return values with types, and for asserting the type of an expression.
-Additionally, as explained in \ref{staticTypeSystems}, TypeScript also supports rich type inference.
-Consider the example shown in Listing \ref{listingForEach}.
-Without any modification of the source code, the following warning would come up, when compiling this script with the TypeScript compiler:
-\lstinline[columns=fixed]{Operator '+=' cannot be applied to types 'number' and 'number | boolean'}.
-So TypeScript is aware of the fact, that the property \lstinline[columns=fixed]{a} of the objects the \lstinline[columns=fixed]{forEach} function iterates over holds sometimes a numeric and sometimes a boolean value and prevents developers from writing type inconsistent code like this.
 
 \medskip\medskip
 \lstset{language=javascript}
@@ -390,9 +382,14 @@ So TypeScript is aware of the fact, that the property \lstinline[columns=fixed]{
 })();
 \end{lstlisting}
 \end{minipage}
-For situations where type inference alone is not enough, TypeScript allows the insertion of type annotations.
-For example, when executing the script shown in listing \ref{lst:TypeAnnotations} without the type annotation \lstinline[columns=fixed]{:number}, the second call of \lstinline[columns=fixed]{double} would return \lstinline[columns=fixed]{NaN}, since it is not possible to multiply a \lstinline[columns=fixed]{string} and a \lstinline[columns=fixed]{number}.
-However, with the annotation, TypeScript reports a compiler error, stating that an "argument of type \lstinline[columns=fixed]{'hello'} is not assignable to parameter of type \lstinline[columns=fixed]{number}".
+Microsoft first released TypeScript in 2012 as an open-source programming language to support the development of large enterprise JavaScript applications. 
+After installing it via npm, a package manager for JavaScript libraries, the TypeScript compiler can be used to check either plain .js files (with the compiler option  \lstinline[columns=fixed]{--allowJs}), or annotated .ts files.
+As stated in \cite{DBLP:conf/ecoop/BiermanAT14}, TypeScript is a syntactic superset of JavaScript, which provides additional syntax for declaring and expressing types, for annotating properties, variables, parameters and return values with types, and for asserting the type of an expression.
+Additionally, as explained in \ref{staticTypeSystems}, TypeScript also supports rich type inference.
+Consider the example shown in Listing \ref{listingForEach}.
+Without any modification of the source code, the following warning would come up, when compiling this script with the TypeScript compiler:
+\lstinline[columns=fixed]{Operator '+=' cannot be applied to types 'number' and 'number | boolean'}.
+So TypeScript is aware of the fact, that the property \lstinline[columns=fixed]{a} of the objects the \lstinline[columns=fixed]{forEach} function iterates over holds sometimes a numeric and sometimes a boolean value and prevents developers from writing type inconsistent code like this.
 
 \medskip\medskip
 \lstset{language=javascript}
@@ -405,6 +402,9 @@ double(3);
 double("hello");
 \end{lstlisting}
 \end{minipage}
+For situations where type inference alone is not enough, TypeScript allows the insertion of type annotations.
+For example, when executing the script shown in listing \ref{lst:TypeAnnotations} without the type annotation \lstinline[columns=fixed]{:number}, the second call of \lstinline[columns=fixed]{double} would return \lstinline[columns=fixed]{NaN}, since it is not possible to multiply a \lstinline[columns=fixed]{string} and a \lstinline[columns=fixed]{number}.
+However, with the annotation, TypeScript reports a compiler error, stating that an "argument of type \lstinline[columns=fixed]{'hello'} is not assignable to parameter of type \lstinline[columns=fixed]{number}".
 Type annotations are also possible for return types and local variables.
 To type entire objects, TypeScript offers structural typing via classes and interfaces which can also be generic since version 2.0.
 Also dealing with intended polymorphism is built in to TypeScript in the form of union types which allow for specifying multiple types for e.g. a single local variable.
@@ -413,7 +413,7 @@ These so called declaration files make it possible to interact type safe with ev
 
 \section{Evaluation}
 
-This section will summarize the results of the evaluation the authors of TypeDevil performed in 2015 and will compare TypeDevil to TypeScript with the help of an additional evaluation.
+This section will summarize the outcomes of the evaluation the authors of TypeDevil performed in 2015 and will compare TypeDevil to TypeScript with the help of an additional evaluation.
 
 \subsection{Original Results for TypeDevil}
 
@@ -429,7 +429,7 @@ When looking at each technique in separation, it turns out that the most impactf
 The authors developed this technique, since in JavaScript \lstinline[columns=fixed]{null} only appears when a developer explicitly uses it to indicate that e.g. a variable can hold \lstinline[columns=fixed]{null} or another value.
 
 \subsection{Comparing TypeDevil and TypeScript} \label{comparison}
-As an additional contribution from my side, TypeDevil should be compared to a static type checker.
+As an additional contribution, this subsection will compare TypeDevil to a static type checker.
 \ref{IntroToTS} already explained why TypeScript was chosen as an example for an additional static type system.
 However, the fact that TypeDevil is a three year old prototype written by a little group of researchers while TypeScript is a industry approved compiler developed mainly by a major IT company and supported by huge community, cannot be denied.
 Nevertheless, in my opinion, a comparison is still justified, since the tools follow completely contrary approaches and TypeDevil is, according to \cite{DBLP:conf/icse/TanXCLYS17}, still considered the state of the art dynamic solution.
@@ -452,71 +452,66 @@ Finally, the scripts which did not produce errors just by compiling them were su
 Table \ref{tab:results} shows the number of warnings TypeDevil and TypeScript - with and without annotations - produce and summarizes the number of total inconsistencies found in the last row.
 Furthermore, the most left column shows the number of additional annotations which had to be inserted to trigger a relevant warning.
 When it comes to the results, TypeDevil correctly identified 35 of the 45 problematic type inconsistencies.
-Note that for three scripts, marked in table \ref{tab:results} with an asterisk, TypeDevil was not able to finish the analysis, because the program crashed during execution with the runtime exception \lstinline[columns=fixed]{TypeError: Cannot read property 'xyz' of undefined}.
-
-
+Note that for three scripts, marked in table \ref{tab:results} with an asterisk, TypeDevil was not able to finish the analysis, because the program crashed during execution with the runtime exception \lstinline[columns=fixed]{TypeError: Cannot read property 'xyz' of undefined}.\\
 \begin{table}[]
-    \centering
-    \begin{tabular*}{\textwidth}{|l @{\extracolsep{\fill}} |c|c|c|c|}
-    \hline
-    \textbf{Script}                       & \textbf{TypeDevil} & \textbf{\begin{tabular}[c]{@{}c@{}}TypeScript \\ (unannotated)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}TypeScript \\ (annotated)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}Annotations \\ needed\end{tabular}} \\
-    \hline
-    api                     & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    callgraph               & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    callgraph2              & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    constructor             & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    constructor2            & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    constructor3            & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    dataflow\_paper         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    duplicate\_warnings     & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    duplicate\_warnings2    & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    duplicates              & 1                  & 0                                                                            & 0                                                                          & 0                                                                      \\
-    eval                    & 0                  & 0                                                                            & 0                                                                          & 0                                                                      \\
-    foreach                 & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    frame                   & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    frame2                  & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    frame3                  & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    frame4                  & 2                  & 2                                                                            & 2                                                                          & 0                                                                      \\
-    frame5                  & 2                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    frame6                  & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    function\_args          & 1                  & 0                                                                            & 0                                                                          & 0                                                                      \\
-    function\_args2         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    function\_args3         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    global\_frame           & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
-    global\_frame2          & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
-    global\_frame3          & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    global\_var             & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    local\_vars\_duplicates & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    missing\_new            & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    missing\_new2           & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    null\_vs\_primitive     & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    paper                   & 2                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    polymorphic\_property   & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    properties              & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    r1                      & 0*                 & 1                                                                            & 1                                                                          & 0                                                                      \\
-    r2                      & 0*                 & 0                                                                            & 0                                                                          & 0                                                                      \\
-    r3                      & 0                  & 0                                                                            & 0                                                                          & 0                                                                      \\
-    r4                      & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    r5                      & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
-    r6                      & 0*                 & 0                                                                            & 1                                                                          & 1                                                                      \\
-    this                    & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    typediff\_duplicates    & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
-    typediff\_paper         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    typediff                & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    typediff2               & 0                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    typediff3               & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    typediff4               & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
-    \hline                                                                                                                                                                                                                                                                            
-    \textbf{Problems detected:}           & \textbf{35}        & \textbf{16}                                                                  & \textbf{40}                                                                & \textbf{24}                                                            \\
-    \hline
-    \end{tabular*}
-    \medskip\medskip
-    \caption{Results of Comparing TypeDevil to TypeScript}
-    \label{tab:results}
-    \end{table}
-
-
-The false negative which was most surprising was the script with the \lstinline[columns=fixed]{eval} function, since this is the type of dynamic behavior static analyses just can not catch and one should think that this is where a dynamic analysis like TypeDevil shines.
+\centering
+\begin{tabular*}{\textwidth}{|l @{\extracolsep{\fill}} |c|c|c|c|}
+\hline
+\textbf{Script}                       & \textbf{TypeDevil} & \textbf{\begin{tabular}[c]{@{}c@{}}TypeScript \\ (unannotated)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}TypeScript \\ (annotated)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}Annotations \\ needed\end{tabular}} \\
+\hline
+api                     & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+callgraph               & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+callgraph2              & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+constructor             & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+constructor2            & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+constructor3            & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+dataflow\_paper         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+duplicate\_warnings     & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+duplicate\_warnings2    & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+duplicates              & 1                  & 0                                                                            & 0                                                                          & 0                                                                      \\
+eval                    & 0                  & 0                                                                            & 0                                                                          & 0                                                                      \\
+foreach                 & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+frame                   & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+frame2                  & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+frame3                  & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+frame4                  & 2                  & 2                                                                            & 2                                                                          & 0                                                                      \\
+frame5                  & 2                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+frame6                  & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+function\_args          & 1                  & 0                                                                            & 0                                                                          & 0                                                                      \\
+function\_args2         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+function\_args3         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+global\_frame           & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
+global\_frame2          & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
+global\_frame3          & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+global\_var             & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+local\_vars\_duplicates & 2                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+missing\_new            & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+missing\_new2           & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+null\_vs\_primitive     & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+paper                   & 2                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+polymorphic\_property   & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+properties              & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+r1                      & 0*                 & 1                                                                            & 1                                                                          & 0                                                                      \\
+r2                      & 0*                 & 0                                                                            & 0                                                                          & 0                                                                      \\
+r3                      & 0                  & 0                                                                            & 0                                                                          & 0                                                                      \\
+r4                      & 1                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+r5                      & 0                  & 1                                                                            & 1                                                                          & 0                                                                      \\
+r6                      & 0*                 & 0                                                                            & 1                                                                          & 1                                                                      \\
+this                    & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+typediff\_duplicates    & 1                  & 2                                                                            & 2                                                                          & 0                                                                      \\
+typediff\_paper         & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+typediff                & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+typediff2               & 0                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+typediff3               & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+typediff4               & 1                  & 0                                                                            & 1                                                                          & 1                                                                      \\
+\hline                                                                                                                                                                                                                                                                            
+\textbf{Problems detected:}           & \textbf{35}        & \textbf{16}                                                                  & \textbf{40}                                                                & \textbf{24}                                                            \\
+\hline
+\end{tabular*}
+\medskip\medskip
+\caption{Results of Comparing TypeDevil to TypeScript}
+\label{tab:results}
+\end{table}The most surprising false negative was the script with the \lstinline[columns=fixed]{eval} function, since this is the type of dynamic behavior static analyses just can not catch and one should think that this is where a dynamic analysis like TypeDevil shines.
 When compiling the scripts without any annotations, the TypeScript compiler identified 16 out of 45 type inconsistencies, which may not seem that much at first glance, but is at least 45\% of the errors TypeDevil spots with the advantage of reporting these ahead of time without executing the program.
 In the last phase of the evaluation all scripts for which TypeScript was not able to spot the type inconsistency on its own got looked through manually and appropriate type annotations to support the compiler were added.
 Most of the time this was just as simple as adding a type annotation to a function parameter or specifying the return type of a function.
@@ -537,9 +532,9 @@ An example for this phenomena is shown in listing \ref{lst:InconsistentFunctionA
         x;
         y;
     } 
-    var a; // a is of type any
+    var a; //a is of type any
     foo(3, 4);
-    foo(3, a); // TS allows a (any) to get passed to foo
+    foo(3, a); //TS allows a (any) to get passed to foo
 })();
 \end{lstlisting}
 \end{minipage}
@@ -551,7 +546,7 @@ And within applications of this size, it is usually not feasible to go through e
 But of course when dealing with big applications, programmers also have to consider the 26X to 30X overhead of Jalangi, on which TypeDevil relies, while a static type checker has just a very little overhead ahead of time.
 
 
-\newpage
+% \newpage
 
 \section{Related Research}
 
@@ -569,7 +564,7 @@ Furthermore, \cite{DBLP:conf/ecoop/BiermanAT14} introduced a precise mathematica
 \section{Conclusion and Future Work}
 This report introduced the general problem of JavaScripts dynamic and weak type system enabling type related bugs.
 It further summarized the key aspects of \cite{DBLP:conf/icse/PradelSS15}, which proposed TypeDevil as a possible solution for the problem.
-Additionally a comparison between TypeDevil and TypeScript, a state of the art static type checker, was made concluding with the fact, the both tools perform quite well with TypeScript being just a little bit better.\\
+Additionally a comparison between TypeDevil and TypeScript, a state of the art static type checker, was contributed concluding with the fact, the both tools perform quite well with TypeScript being just a little bit better.\\
 Concerning future work it is very likely that a lot of further innovation in the area of static type checkers will happen, since major companies like Microsoft and Facebook are working on those tools.
 However, I personally hope that someone also picks up the idea of \cite{DBLP:conf/icse/TanXCLYS17} again and actually provides an open-source implementation of an integrated static and dynamic type analysis, since the paper reads really promising, but at the point of writing there is no public implementation of this approach.  
 
