@@ -157,7 +157,7 @@ console.log(outputString);
 \end{minipage}
 One could expect the script to print \lstinline[columns=fixed]{"Cat Dog Rabbit "} to the console.
 The actual output however is \lstinline[columns=fixed]{"undefinedCat Dog Rabbit "}. 
-In the first iteration of the for-loop, it is being attempted to concatenate a string to the value of \lstinline[columns=fixed]{outputString}, which is undefined. 
+In the first iteration of the for-loop, a string should be concatenated to the value of \lstinline[columns=fixed]{outputString}, which is undefined. 
 JavaScript now performs a implicit coercion and converts the value \lstinline[columns=fixed]{undefined} to the string \lstinline[columns=fixed]{"undefined"} which leads to the unexpected output.
 As pointed out above, dynamic languages do not require programmers to annotate their programs with type information or to follow any strict typing discipline. 
 This freedom allows developers to write concise code in short time. 
@@ -174,7 +174,7 @@ For better understanding of the following, the difference between static and dyn
 The key differentiation point is that a static analysis does not have any runtime information, since the analysis runs ahead of time and the only input to the analysis is the source code itself.
 Therefore it is usually quite hard to predict the exact program behavior.
 It turns out that it is even harder to get comprehensive and precise results for dynamic languages like JavaScript, because of constructs like the \lstinline[columns=fixed]{eval()} function, which interprets the string passed to it at runtime as normal JavaScript code. 
-However the advantage of static analysis is that it usually covers all code paths and runs quite fast.
+However, the advantage of static analysis is that it usually covers all code paths and runs quite fast.
 Typical examples for static analyses in the context of JavaScript are linters like ESLint \cite{ESLint}, JSLint \cite{JSLint} or Prettier \cite{Prettier}, which are capable of ensuring that certain best practices are followed and detecting common programming errors. \\
 Dynamic analyses are typically characterized by the ability that they do have access to runtime information.
 Often, instrumentation code is added to the original source code to track certain features of the program that are relevant to the analysis.
@@ -184,7 +184,7 @@ For example, consider again the \lstinline[columns=fixed]{eval()} function, wher
 However, the biggest downside of a purely dynamic analysis is, that it can not cover all code paths most of the time.
 The following section will focus on TypeDevils mostly dynamic approach to gather type observations at runtime.
 
-\section{TypeDevils Approach}
+\section{TypeDevil's Approach}
 
 This section will introduce the core mechanisms TypeDevil uses to effectively identify and report inconsistent types and is primarily based on \cite{DBLP:conf/icse/PradelSS15}.
 There is a prototype of TypeDevil implemented by the authors on top of Jalangi \cite{DBLP:conf/sigsoft/SenKBG13a} - a dynamic analysis framework for JavaScript - which can be found on GitHub \cite{TypeDevilGitHub}.\\
@@ -228,6 +228,7 @@ addWrapped({v:"18"}, new Wrapper(5));
 The first phase of TypeDevil is to gather type observations at runtime.
 To achieve this TypeDevil first off automatically instruments the original source code in two ways.
 On the one hand, a shadow value gets added to each object and function containing a unique identifier, which makes it easy to access the objects of functions type name whenever they are referred to. 
+The original paper does not go into detail on how these shadow values are actually implemented, but for a basic understanding, consider them just being an additional property of an object.
 On the other hand, TypeDevil saves type observations at every relevant code location to a global set.
 In the sense of TypeDevil, a type is either a primitive type (boolean, number, string, undefined, null) or a so called record type, which basically maps a named property to a set of types.
 For record types, TypeDevil differentiates between object types, array types, function types and (function) frame types.
@@ -235,7 +236,7 @@ A type observation is therefore a triple consisting of a basetype, a property an
 After instrumenting the original source code, TypeDevil executes the program and dynamically gathers type observations which results in a huge set of these observations for further processing.
 The authors of TypeDevil implemented two versions of the analysis. 
 It can either be run on top of node or a custom version of Firefox with a modified version of Spidermonkey, the JavaScript engine of Firefox.
-In the following, each code construct TypeDevil instruments ahead of time will get explained.
+In the following, each code construct TypeDevil instruments ahead of time will be explained.
 
 \subsubsection{Object Literals}
 Consider \lstinline[columns=fixed]{addWrapped} gets called for the first time.
@@ -303,7 +304,7 @@ TypeDevil combines two kinds of techniques to distinguish such intended polymorp
 First of all, the authors of TypeDevil developed techniques which try to group warnings that seem to have the same root cause in the same equivalence class.
 In a second step, TypeDevil marks warnings which are likely to be false positives for pruning.
 In the end, a single warning per equivalence class is kept only if none of the warnings in this class are marked for pruning.\\
-\cite{DBLP:conf/icse/PradelSS15} describes the following unique heuristics:
+\cite{DBLP:conf/icse/PradelSS15} describes the following heuristics:
 \begin{itemize}
     \item Merging by dataflow relations
     \item Merging by type diff
@@ -408,7 +409,7 @@ However, with the annotation, TypeScript reports a compiler error, stating that 
 Type annotations are also possible for return types and local variables.
 To type entire objects, TypeScript offers structural typing via classes and interfaces which can also be generic since version 2.0.
 Also dealing with intended polymorphism is built in to TypeScript in the form of union types which allow for specifying multiple types for e.g. a single local variable.
-Additionally, there is a project called DefinitelyTyped \cite{DefinitelyTyped} on which about 6,500 developers all around the world collaborate to provide type interfaces for nearly 3,600 third-party libraries at the time of writing.
+Additionally, there is a project called DefinitelyTyped \cite{DefinitelyTyped} on which about 6,500 developers collaborate to provide type interfaces for nearly 3,600 third-party libraries at the time of writing.
 These so called declaration files make it possible to interact type safe with every major third party library just by installing the according type definitions via npm.
 
 \section{Evaluation}
@@ -567,7 +568,9 @@ This report introduced the general problem of JavaScripts dynamic and weak type 
 It further summarized the key aspects of \cite{DBLP:conf/icse/PradelSS15}, which proposed TypeDevil as a possible solution for the problem.
 Additionally a comparison between TypeDevil and TypeScript, a state of the art static type checker, was contributed concluding with the fact, the both tools perform quite well with TypeScript being just slightly bit better.\\
 Concerning future work it is very likely that a lot of further innovation in the area of static type checkers will happen, since major companies like Microsoft and Facebook are working on those tools.
-However, it would also be really interesting to pick up the idea of \cite{DBLP:conf/icse/TanXCLYS17} again and actually provide an open-source implementation of an integrated static and dynamic type analysis, since the paper reads really promising, but at the point of writing there is no public implementation of this approach.  
+E.g. there are plans for TypeScript to support higher-order functions that take a variable number of parameters and to investigate nominal typing \cite{TsRoadmap}.
+It would also be really interesting to pick up the idea of \cite{DBLP:conf/icse/TanXCLYS17} again and actually provide an open-source implementation of an integrated static and dynamic type analysis, since the paper reads really promising, but at the point of writing there is no public implementation of this approach. 
+However, since there is already a prototype implementation of TypeDevil, it would also be viable to wrap the original source code into a browser extension to make it more usable for industry developers.
 
 
 \newpage
@@ -584,6 +587,6 @@ I assert the statements made and conclusions drawn are an outcome of my research
 \line(1,0){60}\\
 Nico Fechtner
 \hfill
-Munich, 27.06.2018
+Munich, 09.07.2018
 
 \end{document}
